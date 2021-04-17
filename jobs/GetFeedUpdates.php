@@ -32,16 +32,22 @@ class GetFeedUpdates extends ActiveJob
 /**
  * Creates a new Post in the Space
  */
-    private function postMessage($message)
+    private function postMessage($message, $datePublished = false)
     {
         $post = new Post($this->space);
-        $post->created_by = $this->created_by;
-        $post->updated_by = $this->created_by;
-        $post->content->created_by = $this->created_by;
-        $post->content->updated_by = $this->created_by;
+        $post->created_by =
+        $post->updated_by =
+        $post->content->created_by =
+        $post->content->updated_by =
+            $this->created_by;
         $post->autoFollow = false;
         $post->silentContentCreation = true;
         $post->message = $message;
+        if ( $datePublished ) {
+            $post->created_at =
+            $post->content->created_at =
+                $datePublished->format("Y-m-d H:i:s");
+        }
         $post->save();
     }
 
@@ -177,6 +183,13 @@ class GetFeedUpdates extends ActiveJob
         $pubDate = $item->text('pubDate'); # eg Wed, 14 Apr 2021 00:00:00 GMT
         $image = $item->text('image');
 
+        // decode the date of publication
+        if ( $pubDate ) {
+            $datePublished = \DateTime::createFromFormat("D, j M Y H:i:s T", $pubDate);
+        } else {
+            $datePublished = false;
+        }
+
         // parse the body of the item as a HTML document
         $doc = new \DomDocument();
         $doc->loadHTML($description,
@@ -235,7 +248,7 @@ class GetFeedUpdates extends ActiveJob
         }
 
         // post the message in the stream
-        $this->postMessage($message);
+        $this->postMessage($message, $datePublished);
 
     }
 
