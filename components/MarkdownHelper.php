@@ -180,10 +180,3 @@ class MarkdownHelper {
     }
 
 }
-## TODO
-# add support for HTML dl dt dd tags
-# add support for HTML code pre samp tt
-# add support for HTML dl dt dd
-# add support for HTML details summary
-# add support for HTML ul ol li dir
-# add support for HTML picture
