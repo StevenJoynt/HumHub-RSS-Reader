@@ -32,4 +32,15 @@ class RssElement extends \SimpleXMLElement {
         return $default;
     }
 
+/**
+ * Executes the callback function for each child element with the specified name
+ */
+    public function each($name, callable $callback) {
+        foreach ( $this->children() as $key => $element ) {
+            if ( $key == $name ) {
+                call_user_func($callback, $element);
+            }
+        }
+    }
+
 }
