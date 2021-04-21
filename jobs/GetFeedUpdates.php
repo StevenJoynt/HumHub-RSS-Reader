@@ -90,7 +90,7 @@ class GetFeedUpdates extends ActiveJob
 
         // if no previous version of the post, create a new one
         if ( $post === null ) {
-            $post = new Post($this->space);
+            $post = new Post($this->space); 
             $this->log("\n\n### new Post");
         }
 
@@ -106,20 +106,24 @@ class GetFeedUpdates extends ActiveJob
 
         $post->message = $message;
 
-        if ( $datePublished ) {
-            $post->created_at =
-            $post->updated_at =
-            $post->content->created_at =
-            $post->content->updated_at =
-            $post->content->stream_sort_date =
-                $datePublished->format("Y-m-d H:i:s");
-        }
-
-        $this->log("\n\n### proposed Post " . print_r($post, true));
-
         $post->save();
 
-        $this->log("\n\n### saved Post " . print_r($post, true));
+        if ( $datePublished ) {
+            $stamp = $datePublished->format("Y-m-d H:i:s");
+            Yii::$app->db
+                ->createCommand('update post set created_at=:created_at, updated_at=:updated_at where id=:id')
+                ->bindValue('created_at', $stamp)
+                ->bindValue('updated_at', $stamp)
+                ->bindValue('id', $post->id)
+                ->query();
+            Yii::$app->db
+                ->createCommand('update content set created_at=:created_at, updated_at=:updated_at, stream_sort_date=:stream_sort_date where id=:id')
+                ->bindValue('created_at', $stamp)
+                ->bindValue('updated_at', $stamp)
+                ->bindValue('stream_sort_date', $stamp)
+                ->bindValue('id', $post->content->id)
+                ->query();
+        }
 
     }
 
@@ -147,9 +151,7 @@ class GetFeedUpdates extends ActiveJob
 
         // check if published date is known and in the future
         if ( $datePublished ) {
-            $this->log("\n\n### datePublished " . print_r($datePublished, true));
             if ( $datePublished > $this->now ) {
-                $this->log("\n\n### datePublished is in the future");
                 return; // don't publish it here if it's not time yet
             }
         }
@@ -345,7 +347,7 @@ class GetFeedUpdates extends ActiveJob
         // delete temporary file
         @unlink($this->new_file);
 
-        if ($code == 304) {
+        if ( $code == 304 ) {
             // feed is unchanged - don't report this as an error
             return;
         }
