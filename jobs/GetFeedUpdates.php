@@ -34,6 +34,7 @@ class GetFeedUpdates extends ActiveJob
     private $feed_copyright; # string: copyright information for this RSS feed
     private $article; # string: markdown document representing HTML feed item body
     private $now; # DateTime: the current time
+    private $items; # array of sij\humhub\modules\rss\components\RssElement keyed by pubDate
 
     private function log($message) {
         fwrite($this->log, $message);
@@ -130,7 +131,7 @@ class GetFeedUpdates extends ActiveJob
     /**
      * Process a single item from the RSS news feed
      */
-    public function parseNewsItem($item)
+    private function parseNewsItem($item)
     {
 
         $this->log("\n\n### parseNewsItem\n" . print_r($item, true));
@@ -214,6 +215,29 @@ class GetFeedUpdates extends ActiveJob
     }
 
 /**
+ * Examines each RSS news item.
+ * Extracts the pubDate so they can be sorted into the correct order.
+ */
+    public function examineNewsItem($item) {
+
+        $pubDate = $item->text('pubDate'); # eg Wed, 14 Apr 2021 00:00:00 GMT
+
+        if ( $pubDate ) {
+            $datePublished = \DateTime::createFromFormat("D, j M Y H:i:s T", $pubDate);
+        } else {
+            $datePublished = false;
+        }
+
+        if ( $datePublished ) {
+            $stamp = $datePublished->format("Y-m-d H:i:s");
+            $this->items[$stamp] = $item;
+        } else {
+            $this->items[] = $item;
+        }
+
+    }
+
+/**
  * Process a single channel from the RSS news feed
  */
     public function parseNewsChannel($channel)
@@ -225,8 +249,17 @@ class GetFeedUpdates extends ActiveJob
         $this->feed_description = $channel->text('description');
         $this->feed_copyright = $channel->text('copyright');
 
+        // examine each item in the current channel of the RSS feed
+        $this->items = [];
+        $channel->each('item', [$this, 'examineNewsItem']);
+
+        // sort news items into date order
+        ksort($this->items);
+
         // parse each item in the current channel of the RSS feed
-        $channel->each('item', [$this, 'parseNewsItem']);
+        foreach ( $this->items as $item ) {
+            $this->parseNewsItem($item);
+        }
 
     }
 
