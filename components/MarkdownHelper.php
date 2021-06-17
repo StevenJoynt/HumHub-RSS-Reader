@@ -8,6 +8,7 @@ namespace sij\humhub\modules\rss\components;
 class MarkdownHelper {
 
     private static $article;
+    public static $fh = false;
 
 /**
  * Makes the supplied text safe to use as Markdown.
@@ -21,6 +22,12 @@ class MarkdownHelper {
         );
     }
 
+    private static function log($text) {
+        if ( MarkdownHelper::$fh ) {
+            fwrite(MarkdownHelper::$fh, $text);
+        }
+    }
+
 /**
  * Translates a HTML document into Markdown syntax
  */
@@ -31,6 +38,11 @@ class MarkdownHelper {
         );
         MarkdownHelper::$article = "";
         MarkdownHelper::translateNode($doc->documentElement);
+        MarkdownHelper::$article =  preg_replace(
+            ['/  +/', '/ +\n/'], 
+            [' ',     "\n"    ], 
+            MarkdownHelper::$article
+        );
         return trim(MarkdownHelper::$article);
     }
 
@@ -41,37 +53,39 @@ class MarkdownHelper {
     {
         switch ( $node->nodeType ) {
             case XML_TEXT_NODE:
-                MarkdownHelper::$article .= MarkdownHelper::escape($node->textContent);
+                $text = preg_replace('/\s+/', ' ', $node->textContent);
+                MarkdownHelper::log("\n\n### Text: |${text}|");
+                MarkdownHelper::$article .= MarkdownHelper::escape($text);
                 break;
             case XML_ELEMENT_NODE:
                 switch ( strtolower($node->nodeName) ) {
                     case 'h1':
-                        $before = "\n#";
+                        $before = "\n# ";
                         $after = "\n";
                         $enter = true;
                         break;
                     case 'h2':
-                        $before = "\n##";
+                        $before = "\n## ";
                         $after = "\n";
                         $enter = true;
                         break;
                     case 'h3':
-                        $before = "\n###";
+                        $before = "\n### ";
                         $after = "\n";
                         $enter = true;
                         break;
                     case 'h4':
-                        $before = "\n####";
+                        $before = "\n#### ";
                         $after = "\n";
                         $enter = true;
                         break;
                     case 'h5':
-                        $before = "\n#####";
+                        $before = "\n##### ";
                         $after = "\n";
                         $enter = true;
                         break;
                     case 'h6':
-                        $before = "\n######";
+                        $before = "\n###### ";
                         $after = "\n";
                         $enter = true;
                         break;
@@ -149,9 +163,11 @@ class MarkdownHelper {
                     case 'acronym' :
                     case 'address' :
                     case 'big' :
+                    case 'body' :
                     case 'cite' :
                     case 'figcaption' :
                     case 'figure' :
+                    case 'html' :
                     case 'ins' :
                     case 'small' :
                     case 'span' :
@@ -164,11 +180,37 @@ class MarkdownHelper {
                         $after = "";
                         $enter = true;
                         break;
+                    case 'table' :
+                        $before = "\n";
+                        $after = "\n";
+                        $enter = true;
+                        break;
+                    case 'tr' :
+                    case 'th' :
+                    case 'td' :
+                    case 'thead' :
+                    case 'tbody' :
+                    case 'tfoot' :
+                    case 'caption' :
+                        $before = " ";
+                        $after = " ";
+                        $enter = true;
+                        break;
                     default:
                         $before = "";
                         $after = "";
                         $enter = false;
                 }
+
+                MarkdownHelper::log("\n\n### " . strtolower($node->nodeName));
+                MarkdownHelper::log("\nBefore: |${before}|");
+                MarkdownHelper::log("\nAfter: |${after}|");
+                if ( $enter ) {
+                    MarkdownHelper::log("\nEntering...");
+                } else {
+                    MarkdownHelper::log("\nSkipping...");
+                }
+
                 MarkdownHelper::$article .= $before;
                 if ( $enter ) {
                     foreach ( $node->childNodes as $child ) {
