@@ -33,6 +33,19 @@ class RssElement extends \SimpleXMLElement {
     }
 
 /**
+ * Obtains the text enclosed in an element within a namespace, or returns the supplied default value.
+ */
+    public function nstext($namespace, $name, $default = '') {
+        $children = $this->children($namespace, true);
+        if ( isset($children->{$name}) ) {
+            $value = (string)$children->{$name};
+            $value = trim($value);
+            if ( $value != '' ) return $value;
+        }
+        return $default;
+    }
+
+/**
  * Executes the callback function for each child element with the specified name
  */
     public function each($name, callable $callback) {

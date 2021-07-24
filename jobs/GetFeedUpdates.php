@@ -140,6 +140,7 @@ class GetFeedUpdates extends ActiveJob
         $title = $item->text('title');
         $link = $item->text('link');
         $description = $item->text('description');
+        $content = $item->nstext('content', 'encoded');
         $pubDate = $item->text('pubDate'); # eg Wed, 14 Apr 2021 00:00:00 GMT
         $image = $item->text('image');
 
@@ -157,8 +158,17 @@ class GetFeedUpdates extends ActiveJob
             }
         }
 
+        // choose which version of the article to use
+        // use $description if we want to show a quick summary
+        // use $content if we are showing the full article
+        // if only one of them is supplied, use that
+        // TODO for now we will favour the full article - we need to make this configurable
+        if ( $content == '' ) {
+            $content = $description;
+        }
+
         // parse the body of the item as a HTML document
-        $article = MarkdownHelper::translateHTML($description);
+        $article = MarkdownHelper::translateHTML($content);
 
         // start building the message to post in the stream
         $message = '';
