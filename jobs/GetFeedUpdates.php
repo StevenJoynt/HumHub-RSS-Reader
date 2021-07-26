@@ -353,11 +353,11 @@ class GetFeedUpdates extends ActiveJob
         curl_setopt($ch, CURLOPT_FILE, $fh);
         curl_setopt($ch, CURLOPT_FAILONERROR, true);
         curl_setopt($ch, CURLOPT_HEADER, false);
-        /* if ( @is_file($this->rss_file) ) {
+        if ( @is_file($this->rss_file) ) {
             // only download if newer than what we already have in the cache
             curl_setopt($ch, CURLOPT_TIMECONDITION, CURL_TIMECOND_IFMODSINCE);
             curl_setopt($ch, CURLOPT_TIMEVALUE, filemtime($this->rss_file));
-        } */
+        }
         curl_exec($ch);
         $error = curl_error($ch);
         $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
