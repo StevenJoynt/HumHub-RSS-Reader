@@ -57,7 +57,7 @@ class MarkdownHelper {
     {
         switch ( $node->nodeType ) {
             case XML_TEXT_NODE:
-                $text = preg_replace('/\s+/', ' ', $node->textContent);
+                $text = trim(preg_replace('/\s+/', ' ', $node->textContent));
                 MarkdownHelper::log("\n\n### Text: |${text}|");
                 MarkdownHelper::$article .= MarkdownHelper::escape($text);
                 break;
@@ -115,23 +115,23 @@ class MarkdownHelper {
                     case 'kbd' :
                     case 'mark' :
                     case 'strong' :
-                        $before = " **";
-                        $after = "** ";
+                        $before = "**";
+                        $after = "**";
                         $enter = true;
                         break;
                     case 'dfn' :
                     case 'em':
                     case 'i':
                     case 'var' :
-                        $before = " *";
-                        $after = "* ";
+                        $before = "_";
+                        $after = "_";
                         $enter = true;
                         break;
                     case 's':
                     case 'strike':
                     case 'del':
-                        $before = " ~~";
-                        $after = "~~ ";
+                        $before = "~~";
+                        $after = "~~";
                         $enter = true;
                         break;
                     case 'blockquote':
@@ -141,8 +141,8 @@ class MarkdownHelper {
                         $enter = true;
                         break;
                     case 'a':
-                        $before = "[";
-                        $after = "](" . $node->getAttribute('href') . ")";
+                        $before = " [";
+                        $after = "](" . $node->getAttribute('href') . ") ";
                         $enter = true;
                         break;
                     case 'img':
@@ -169,8 +169,8 @@ class MarkdownHelper {
                             if ( $size = ' =x' ) {
                                 $size = '';
                             }
-                            $before = "![" . $node->getAttribute('alt') . "]";
-                            $after = "(" . $node->getAttribute('src') . $size . ")";
+                            $before = " ![" . $node->getAttribute('alt') . "]";
+                            $after = "(" . $node->getAttribute('src') . $size . ") ";
                         } else {
                             $before = '';
                             $after = '';
