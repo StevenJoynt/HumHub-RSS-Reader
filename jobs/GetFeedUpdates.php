@@ -199,7 +199,7 @@ class GetFeedUpdates extends ActiveJob
 
         // add the picture to the post message, if supplied
         if ( $image ) {
-            $message .= '![<](' . $image . ' =200x)';
+            $message .= '![](' . $image . ')' . "\n";
         }
 
         // add the main body of the rss news item to this stream post

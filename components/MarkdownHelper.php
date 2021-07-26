@@ -165,12 +165,12 @@ class MarkdownHelper {
                                     $height = MarkdownHelper::$cfg_maxheight;
                                 }
                             }
-                            $size = $width . 'x' . $height;
-                            if ( $size = 'x' ) {
-                                $size = MarkdownHelper::$cfg_maxwidth . 'x';
+                            $size = ' =' . $width . 'x' . $height;
+                            if ( $size = ' =x' ) {
+                                $size = '';
                             }
                             $before = "![" . $node->getAttribute('alt') . "]";
-                            $after = "(" . $node->getAttribute('src') . " =${size})";
+                            $after = "(" . $node->getAttribute('src') . $size . ")";
                         } else {
                             $before = '';
                             $after = '';
