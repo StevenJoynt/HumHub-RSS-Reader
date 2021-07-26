@@ -19,6 +19,7 @@ class GetFeedUpdates extends ActiveJob
 {
 
     public $space; # humhub\modules\space\models\Space
+    public $force; # when true, ignore any cached values (used when config changed)
 
     private $log; # filehandle for log file
 
@@ -84,21 +85,22 @@ class GetFeedUpdates extends ActiveJob
 
         // attempt to locate a previous version of the post
         if ( $datePublished ) {
+            $stamp = $datePublished->format("Y-m-d H:i:s");
             $oldContent = Content::findAll([
                 'contentcontainer_id' => $this->space->contentcontainer_id,
                 'created_by' => $this->created_by,
-                'created_at' => $datePublished->format("Y-m-d H:i:s"),
+                'created_at' => $stamp,
             ]);
             if ( count($oldContent) == 1 ) {
-                $post = new Post($oldContent[0]->object_id);
-                $this->log("\n\n### update Post");
+                $post = Post::findOne($oldContent[0]->object_id);
+                $this->log("\n\n### update Post\n");
             }
         }
 
         // if no previous version of the post, create a new one
         if ( $post === null ) {
-            $post = new Post($this->space); 
-            $this->log("\n\n### new Post");
+            $post = new Post($this->space);
+            $this->log("\n\n### new Post\n");
         }
 
         $post->created_by =
@@ -114,9 +116,11 @@ class GetFeedUpdates extends ActiveJob
         $post->message = $message;
 
         $post->save();
+        $this->log(print_r($post, true));
 
+        // make it look like the space post was created at the same time as the RSS article
+        // note $post->save() always sets the time stamps to "now"
         if ( $datePublished ) {
-            $stamp = $datePublished->format("Y-m-d H:i:s");
             Yii::$app->db
                 ->createCommand('update post set created_at=:created_at, updated_at=:updated_at where id=:id')
                 ->bindValue('created_at', $stamp)
@@ -382,21 +386,26 @@ class GetFeedUpdates extends ActiveJob
             return;
         }
 
+        if ( $code == 304 ) {
+            // feed is unchanged
+            @unlink($this->new_file);
+            if ( $this->force ) {
+                $this->log("\nRe-examine the old RSS feed data\n");
+                $this->parseNewsFeed();
+            } else {
+                $this->log("\nFeed is unchanged\n");
+            }
+            return;
+        }
+
         if ( $code == 200 ) {
             // feed has been updated
             if ( @is_file($this->rss_file) ) {
                 @unlink($this->rss_file);
             }
             @rename($this->new_file, $this->rss_file);
-            $this->parseNewsFeed(); // examine the updated RSS feed data
-            return; // nothing more to do
-        }
-
-        // delete temporary file
-        @unlink($this->new_file);
-
-        if ( $code == 304 ) {
-            // feed is unchanged - don't report this as an error
+            $this->log("\nExamine the updated RSS feed data\n");
+            $this->parseNewsFeed();
             return;
         }
 

@@ -50,7 +50,7 @@ class Events
                 $cc = ContentContainer::findOne($ccms->contentcontainer_id);
                 $space = Space::findOne($cc->pk);
                 $event->sender->stdout("  Queueing update for space \"" . $space->name . "\"\n");
-                Yii::$app->queue->push(new jobs\GetFeedUpdates(['space' => $space]));
+                Yii::$app->queue->push(new jobs\GetFeedUpdates(['space' => $space, 'force' => false]));
             }
             $event->sender->stdout("done.\n", Console::FG_GREEN);
         } catch (\Throwable $e) {

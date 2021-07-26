@@ -8,6 +8,7 @@ use humhub\modules\user\models\User;
 use humhub\modules\space\models\Space;
 use humhub\modules\content\components\ContentContainerController;
 use sij\humhub\modules\rss\models\ConfigureForm;
+use sij\humhub\modules\rss\jobs\GetFeedUpdates;
 
 class RssController extends ContentContainerController
 {
@@ -30,6 +31,7 @@ class RssController extends ContentContainerController
             $container->setSetting('pictures', $form->pictures, 'rss');
             $container->setSetting('maxwidth', $form->maxwidth, 'rss');
             $container->setSetting('maxheight', $form->maxheight, 'rss');
+            Yii::$app->queue->push(new GetFeedUpdates(['space' => $container, 'force' => true]));
             return $this->redirect($container->createUrl('/rss/rss/config'));
         }
         return $this->render('config', array('model' => $form));
