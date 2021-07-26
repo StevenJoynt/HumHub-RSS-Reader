@@ -8,7 +8,11 @@ namespace sij\humhub\modules\rss\components;
 class MarkdownHelper {
 
     private static $article;
+
     public static $fh = false;
+    public static $cfg_pictures = 'yes';
+    public static $cfg_maxwidth = 500;
+    public static $cfg_maxheight = 500;
 
 /**
  * Makes the supplied text safe to use as Markdown.
@@ -142,16 +146,35 @@ class MarkdownHelper {
                         $enter = true;
                         break;
                     case 'img':
-                        $size =
-                            $node->getAttribute('width') .
-                            "x" .
-                            $node->getAttribute('height');
-                        $before = "![" . $node->getAttribute('alt') . "]";
-                        $after = "(" . $node->getAttribute('src');
-                        if ($size != 'x') {
-                            $after .= " =${size}";
+                        if ( MarkdownHelper::$cfg_pictures == 'yes' ) {
+                            $width = $node->getAttribute('width');
+                            $height = $node->getAttribute('height');
+                            if ( $width ) {
+                                if ( $width > MarkdownHelper::$cfg_maxwidth ) {
+                                    if ( $height ) {
+                                        $height = floor($height * MarkdownHelper::$cfg_maxwidth / $width);
+                                    }
+                                    $width = MarkdownHelper::$cfg_maxwidth;
+                                }
+                            }
+                            if ( $height ) {
+                                if ( $height > MarkdownHelper::$cfg_maxheight ) {
+                                    if ( $width ) {
+                                        $width = floor($width * MarkdownHelper::$cfg_maxheight / $height);
+                                    }
+                                    $height = MarkdownHelper::$cfg_maxheight;
+                                }
+                            }
+                            $size = $width . 'x' . $height;
+                            if ( $size = 'x' ) {
+                                $size = MarkdownHelper::$cfg_maxwidth . 'x';
+                            }
+                            $before = "![" . $node->getAttribute('alt') . "]";
+                            $after = "(" . $node->getAttribute('src') . " =${size})";
+                        } else {
+                            $before = '';
+                            $after = '';
                         }
-                        $after .= ")";
                         $enter = false;
                         break;
                     case 'hr':

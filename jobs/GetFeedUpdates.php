@@ -22,7 +22,13 @@ class GetFeedUpdates extends ActiveJob
 
     private $log; # filehandle for log file
 
-    private $rss_url; # string: the URL of the RSS feed
+    # configuration settings
+    private $cfg_url;       # the URL of the RSS feed
+    private $cfg_article;   # 'summary' or 'full'
+    private $cfg_pictures;  # 'yes' or 'no'
+    private $cfg_maxwidth;  # maximum width of pictures
+    private $cfg_maxheight; # maximum height of pictures
+
     private $created_by; # int: user id number
     private $rss_folder; # string: full name of the folder to store the RSS feed
     private $rss_file; # string: full name of the current RSS feed file
@@ -162,8 +168,7 @@ class GetFeedUpdates extends ActiveJob
         // use $description if we want to show a quick summary
         // use $content if we are showing the full article
         // if only one of them is supplied, use that
-        // TODO for now we will favour the full article - we need to make this configurable
-        if ( $content == '' ) {
+        if ( $content == '' || $this->cfg_article == 'summary' ) {
             $content = $description;
         }
 
@@ -349,7 +354,7 @@ class GetFeedUpdates extends ActiveJob
         }
 
         // use cURL to download the latest RSS data
-        $ch = curl_init($this->rss_url);
+        $ch = curl_init($this->cfg_url);
         curl_setopt($ch, CURLOPT_FILE, $fh);
         curl_setopt($ch, CURLOPT_FAILONERROR, true);
         curl_setopt($ch, CURLOPT_HEADER, false);
@@ -369,7 +374,7 @@ class GetFeedUpdates extends ActiveJob
             // curl failed for some reason
             $this->postError(
                 "Failed to read feed from URL",
-                MarkdownHelper::escape($this->rss_url) .
+                MarkdownHelper::escape($this->cfg_url) .
                 "\n" .
                 MarkdownHelper::escape($error) .
                 "\n"
@@ -398,7 +403,7 @@ class GetFeedUpdates extends ActiveJob
         // report error
         $this->postError(
             "Failed to read URL",
-            MarkdownHelper::escape($this->rss_url) . "\n" .
+            MarkdownHelper::escape($this->cfg_url) . "\n" .
             "HTTP response code = ${code}"
         );
 
@@ -412,7 +417,16 @@ class GetFeedUpdates extends ActiveJob
 
         $this->log = fopen(dirname(__FILE__) . '/log.txt', 'w');
 
-        $this->rss_url = $this->space->getSetting('url', 'rss');
+        $this->cfg_url = $this->space->getSetting('url', 'rss');
+        $this->cfg_article = $this->space->getSetting('article', 'rss', 'summary');
+        $this->cfg_pictures = $this->space->getSetting('pictures', 'rss', 'yes');
+        $this->cfg_maxwidth = (int)$this->space->getSetting('maxwidth', 'rss', '500');
+        $this->cfg_maxheight = (int)$this->space->getSetting('maxheight', 'rss', '500');
+
+        MarkdownHelper::$cfg_pictures = $this->cfg_pictures;
+        MarkdownHelper::$cfg_maxwidth = $this->cfg_maxwidth;
+        MarkdownHelper::$cfg_maxheight = $this->cfg_maxheight;
+
         $this->created_by = $this->space->created_by;
 
         $this->rss_folder = Yii::getAlias('@runtime/rss');
