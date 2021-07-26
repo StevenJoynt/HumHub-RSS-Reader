@@ -8,6 +8,7 @@ namespace sij\humhub\modules\rss\components;
 class MarkdownHelper {
 
     private static $article;
+    private static $level;
 
     public static $fh = false;
     public static $cfg_pictures = 'yes';
@@ -36,11 +37,12 @@ class MarkdownHelper {
  * Translates a HTML document into Markdown syntax
  */
     public static function translateHTML($html) {
-        $doc = new \DomDocument();
-        $doc->loadHTML($html,
-            LIBXML_HTML_NOIMPLIED | LIBXML_NOBLANKS | LIBXML_NOCDATA | LIBXML_NOEMPTYTAG
-        );
+        $doc = new \DomDocument('1.0', 'UTF-8');
+        $doc->loadHTML(
+            mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), 
+            LIBXML_NOCDATA );
         MarkdownHelper::$article = "";
+        MarkdownHelper::$level = 0;
         MarkdownHelper::translateNode($doc->documentElement);
         MarkdownHelper::$article =  preg_replace(
             ['/  +/', '/ +\n/'], 
@@ -58,10 +60,11 @@ class MarkdownHelper {
         switch ( $node->nodeType ) {
             case XML_TEXT_NODE:
                 $text = trim(preg_replace('/\s+/', ' ', $node->textContent));
-                MarkdownHelper::log("\n\n### Text: |${text}|");
+                MarkdownHelper::log("\n### Text: |${text}|");
                 MarkdownHelper::$article .= MarkdownHelper::escape($text);
                 break;
             case XML_ELEMENT_NODE:
+                MarkdownHelper::log("\n### node " . MarkdownHelper::$level . " " . strtolower($node->nodeName));
                 switch ( strtolower($node->nodeName) ) {
                     case 'h1':
                         $before = "\n# ";
@@ -225,21 +228,23 @@ class MarkdownHelper {
                         $enter = false;
                 }
 
-                MarkdownHelper::log("\n\n### " . strtolower($node->nodeName));
                 MarkdownHelper::log("\nBefore: |${before}|");
                 MarkdownHelper::log("\nAfter: |${after}|");
+
+                MarkdownHelper::$article .= $before;
+
                 if ( $enter ) {
-                    MarkdownHelper::log("\nEntering...");
+                    MarkdownHelper::$level++;
+                    MarkdownHelper::log("\nEntering... " . MarkdownHelper::$level);
+                    foreach ( $node->childNodes as $child ) {
+                        MarkdownHelper::translateNode($child);
+                    }
+                    MarkdownHelper::log("\nExiting... " . MarkdownHelper::$level);
+                    MarkdownHelper::$level--;
                 } else {
                     MarkdownHelper::log("\nSkipping...");
                 }
 
-                MarkdownHelper::$article .= $before;
-                if ( $enter ) {
-                    foreach ( $node->childNodes as $child ) {
-                        MarkdownHelper::translateNode($child);
-                    }
-                }
                 MarkdownHelper::$article .= $after;
         }
     }
