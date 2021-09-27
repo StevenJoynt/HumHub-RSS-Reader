@@ -44,8 +44,10 @@ class GetFeedUpdates extends ActiveJob
     private $items; # array of sij\humhub\modules\rss\components\RssElement keyed by pubDate
 
     private function log($message) {
-        fwrite($this->logFileHandle, $message);
-        fflush($this->logFileHandle);
+        if ( $this->logFileHandle ) {
+            fwrite($this->logFileHandle, $message);
+            fflush($this->logFileHandle);
+        }
     }
 
 /**
@@ -139,6 +141,17 @@ class GetFeedUpdates extends ActiveJob
     }
 
     /**
+     * Process the 'enclosure' element of a podcast item within an RSS feed
+     */
+    public function parseEnclosure($enclosure) {
+        $this->log("\n\n### parseEnclosure\n" . print_r($enclosure, true));
+        $url = $enclosure->attr('url');
+        if ( $url ) {
+            $this->article .= "\n[:arrow_forward:](" . $url . ")\n";
+        }
+    }
+
+    /**
      * Process a single item from the RSS news feed
      */
     private function parseNewsItem($item)
@@ -177,7 +190,10 @@ class GetFeedUpdates extends ActiveJob
         }
 
         // parse the body of the item as a HTML document
-        $article = MarkdownHelper::translateHTML($content);
+        $this->article = MarkdownHelper::translateHTML($content);
+
+        // append the podcast audio file to the article if present
+        $item->each('enclosure', [$this, 'parseEnclosure']);
 
         // start building the message to post in the stream
         $message = '';
@@ -203,7 +219,7 @@ class GetFeedUpdates extends ActiveJob
         }
 
         // add the main body of the rss news item to this stream post
-        $message .= $article;
+        $message .= $this->article;
 
         // add a horizontal line to the post to separate it from the footer
         $message .= "\n\n---\n\n";
@@ -424,7 +440,7 @@ class GetFeedUpdates extends ActiveJob
     public function run()
     {
 
-        $this->logFileHandle = fopen(dirname(__FILE__) . '/log.txt', 'w');
+####### $this->logFileHandle = fopen(dirname(__FILE__) . '/log.txt', 'w');
 
         $this->cfg_url = $this->space->getSetting('url', 'rss');
         $this->cfg_article = $this->space->getSetting('article', 'rss', 'summary');
@@ -448,7 +464,9 @@ class GetFeedUpdates extends ActiveJob
 
         $this->downloadNewsFeed();
 
-        fclose($this->logFileHandle);
+        if ( $this->logFileHandle ) {
+            fclose($this->logFileHandle);
+        }
 
     }
 }
