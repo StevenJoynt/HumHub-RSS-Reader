@@ -10,7 +10,7 @@ class MarkdownHelper {
     private static $article;
     private static $level;
 
-    public static $fh = false;
+    public static $logFileHandle = false;
     public static $cfg_pictures = 'yes';
     public static $cfg_maxwidth = 500;
     public static $cfg_maxheight = 500;
@@ -28,8 +28,8 @@ class MarkdownHelper {
     }
 
     private static function log($text) {
-        if ( MarkdownHelper::$fh ) {
-            fwrite(MarkdownHelper::$fh, $text);
+        if ( self::logFileHandle ) {
+            fwrite(self::logFileHandle, $text);
         }
     }
 
@@ -41,15 +41,15 @@ class MarkdownHelper {
         $doc->loadHTML(
             mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), 
             LIBXML_NOCDATA );
-        MarkdownHelper::$article = "";
-        MarkdownHelper::$level = 0;
-        MarkdownHelper::translateNode($doc->documentElement);
-        MarkdownHelper::$article =  preg_replace(
+        self::$article = "";
+        self::$level = 0;
+        self::translateNode($doc->documentElement);
+        self::$article =  preg_replace(
             ['/  +/', '/ +\n/'], 
             [' ',     "\n"    ], 
-            MarkdownHelper::$article
+            self::article
         );
-        return trim(MarkdownHelper::$article);
+        return trim(self::article);
     }
 
 /**
@@ -60,11 +60,11 @@ class MarkdownHelper {
         switch ( $node->nodeType ) {
             case XML_TEXT_NODE:
                 $text = trim(preg_replace('/\s+/', ' ', $node->textContent));
-                MarkdownHelper::log("\n### Text: |${text}|");
-                MarkdownHelper::$article .= MarkdownHelper::escape($text);
+                self::log("\n### Text: |${text}|");
+                self::$article .= self::escape($text);
                 break;
             case XML_ELEMENT_NODE:
-                MarkdownHelper::log("\n### node " . MarkdownHelper::$level . " " . strtolower($node->nodeName));
+                self::log("\n### node " . self::level . " " . strtolower($node->nodeName));
                 switch ( strtolower($node->nodeName) ) {
                     case 'h1':
                         $before = "\n# ";
@@ -149,23 +149,23 @@ class MarkdownHelper {
                         $enter = true;
                         break;
                     case 'img':
-                        if ( MarkdownHelper::$cfg_pictures == 'yes' ) {
+                        if ( self::cfg_pictures == 'yes' ) {
                             $width = $node->getAttribute('width');
                             $height = $node->getAttribute('height');
                             if ( $width ) {
-                                if ( $width > MarkdownHelper::$cfg_maxwidth ) {
+                                if ( $width > self::cfg_maxwidth ) {
                                     if ( $height ) {
-                                        $height = floor($height * MarkdownHelper::$cfg_maxwidth / $width);
+                                        $height = floor($height * self::cfg_maxwidth / $width);
                                     }
-                                    $width = MarkdownHelper::$cfg_maxwidth;
+                                    $width = self::cfg_maxwidth;
                                 }
                             }
                             if ( $height ) {
-                                if ( $height > MarkdownHelper::$cfg_maxheight ) {
+                                if ( $height > self::cfg_maxheight ) {
                                     if ( $width ) {
-                                        $width = floor($width * MarkdownHelper::$cfg_maxheight / $height);
+                                        $width = floor($width * self::cfg_maxheight / $height);
                                     }
-                                    $height = MarkdownHelper::$cfg_maxheight;
+                                    $height = self::cfg_maxheight;
                                 }
                             }
                             $size = ' =' . $width . 'x' . $height;
@@ -222,30 +222,30 @@ class MarkdownHelper {
                         $after = " ";
                         $enter = true;
                         break;
-                    default:
+                    default :
                         $before = "";
                         $after = "";
                         $enter = false;
                 }
 
-                MarkdownHelper::log("\nBefore: |${before}|");
-                MarkdownHelper::log("\nAfter: |${after}|");
+                self::log("\nBefore: |${before}|");
+                self::log("\nAfter: |${after}|");
 
-                MarkdownHelper::$article .= $before;
+                self::$article .= $before;
 
                 if ( $enter ) {
-                    MarkdownHelper::$level++;
-                    MarkdownHelper::log("\nEntering... " . MarkdownHelper::$level);
+                    self::$level++;
+                    self::log("\nEntering... " . self::level);
                     foreach ( $node->childNodes as $child ) {
-                        MarkdownHelper::translateNode($child);
+                        self::translateNode($child);
                     }
-                    MarkdownHelper::log("\nExiting... " . MarkdownHelper::$level);
-                    MarkdownHelper::$level--;
+                    self::log("\nExiting... " . self::level);
+                    self::$level--;
                 } else {
-                    MarkdownHelper::log("\nSkipping...");
+                    self::log("\nSkipping...");
                 }
 
-                MarkdownHelper::$article .= $after;
+                self::$article .= $after;
         }
     }
 

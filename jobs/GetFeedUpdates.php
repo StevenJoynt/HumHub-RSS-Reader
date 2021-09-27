@@ -21,7 +21,7 @@ class GetFeedUpdates extends ActiveJob
     public $space; # humhub\modules\space\models\Space
     public $force; # when true, ignore any cached values (used when config changed)
 
-    private $log; # filehandle for log file
+    private $logFileHandle;
 
     # configuration settings
     private $cfg_url;       # the URL of the RSS feed
@@ -44,8 +44,8 @@ class GetFeedUpdates extends ActiveJob
     private $items; # array of sij\humhub\modules\rss\components\RssElement keyed by pubDate
 
     private function log($message) {
-        fwrite($this->log, $message);
-        fflush($this->log);
+        fwrite($this->logFileHandle, $message);
+        fflush($this->logFileHandle);
     }
 
 /**
@@ -348,8 +348,8 @@ class GetFeedUpdates extends ActiveJob
         @chmod($this->rss_folder, 0755);
 
         // create a new file to hold the updated RSS data
-        $fh = fopen($this->new_file, 'w');
-        if ( ! $fh ) {
+        $cacheFileHandle = fopen($this->new_file, 'w');
+        if ( ! $cacheFileHandle ) {
             $this->postError(
                 "Failed to create cache file",
                 MarkdownHelper::escape($this->new_file)
@@ -359,7 +359,7 @@ class GetFeedUpdates extends ActiveJob
 
         // use cURL to download the latest RSS data
         $ch = curl_init($this->cfg_url);
-        curl_setopt($ch, CURLOPT_FILE, $fh);
+        curl_setopt($ch, CURLOPT_FILE, $cacheFileHandle);
         curl_setopt($ch, CURLOPT_FAILONERROR, true);
         curl_setopt($ch, CURLOPT_HEADER, false);
         if ( @is_file($this->rss_file) ) {
@@ -372,7 +372,7 @@ class GetFeedUpdates extends ActiveJob
         $code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         curl_close($ch);
 
-        fclose($fh);
+        fclose($cacheFileHandle);
 
         if ( $error ) {
             // curl failed for some reason
@@ -424,7 +424,7 @@ class GetFeedUpdates extends ActiveJob
     public function run()
     {
 
-        $this->log = fopen(dirname(__FILE__) . '/log.txt', 'w');
+        $this->logFileHandle = fopen(dirname(__FILE__) . '/log.txt', 'w');
 
         $this->cfg_url = $this->space->getSetting('url', 'rss');
         $this->cfg_article = $this->space->getSetting('article', 'rss', 'summary');
@@ -448,7 +448,7 @@ class GetFeedUpdates extends ActiveJob
 
         $this->downloadNewsFeed();
 
-        fclose($this->log);
+        fclose($this->logFileHandle);
 
     }
 }
