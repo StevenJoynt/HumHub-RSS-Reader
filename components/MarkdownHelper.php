@@ -28,8 +28,8 @@ class MarkdownHelper {
     }
 
     private static function log($text) {
-        if ( self::logFileHandle ) {
-            fwrite(self::logFileHandle, $text);
+        if ( self::$logFileHandle ) {
+            fwrite(self::$logFileHandle, $text);
         }
     }
 
@@ -47,9 +47,9 @@ class MarkdownHelper {
         self::$article =  preg_replace(
             ['/  +/', '/ +\n/'], 
             [' ',     "\n"    ], 
-            self::article
+            self::$article
         );
-        return trim(self::article);
+        return trim(self::$article);
     }
 
 /**
@@ -64,7 +64,7 @@ class MarkdownHelper {
                 self::$article .= self::escape($text);
                 break;
             case XML_ELEMENT_NODE:
-                self::log("\n### node " . self::level . " " . strtolower($node->nodeName));
+                self::log("\n### node " . self::$level . " " . strtolower($node->nodeName));
                 switch ( strtolower($node->nodeName) ) {
                     case 'h1':
                         $before = "\n# ";
@@ -149,23 +149,23 @@ class MarkdownHelper {
                         $enter = true;
                         break;
                     case 'img':
-                        if ( self::cfg_pictures == 'yes' ) {
+                        if ( self::$cfg_pictures == 'yes' ) {
                             $width = $node->getAttribute('width');
                             $height = $node->getAttribute('height');
                             if ( $width ) {
-                                if ( $width > self::cfg_maxwidth ) {
+                                if ( $width > self::$cfg_maxwidth ) {
                                     if ( $height ) {
-                                        $height = floor($height * self::cfg_maxwidth / $width);
+                                        $height = floor($height * self::$cfg_maxwidth / $width);
                                     }
-                                    $width = self::cfg_maxwidth;
+                                    $width = self::$cfg_maxwidth;
                                 }
                             }
                             if ( $height ) {
-                                if ( $height > self::cfg_maxheight ) {
+                                if ( $height > self::$cfg_maxheight ) {
                                     if ( $width ) {
-                                        $width = floor($width * self::cfg_maxheight / $height);
+                                        $width = floor($width * self::$cfg_maxheight / $height);
                                     }
-                                    $height = self::cfg_maxheight;
+                                    $height = self::$cfg_maxheight;
                                 }
                             }
                             $size = ' =' . $width . 'x' . $height;
@@ -235,11 +235,11 @@ class MarkdownHelper {
 
                 if ( $enter ) {
                     self::$level++;
-                    self::log("\nEntering... " . self::level);
+                    self::log("\nEntering... " . self::$level);
                     foreach ( $node->childNodes as $child ) {
                         self::translateNode($child);
                     }
-                    self::log("\nExiting... " . self::level);
+                    self::log("\nExiting... " . self::$level);
                     self::$level--;
                 } else {
                     self::log("\nSkipping...");
