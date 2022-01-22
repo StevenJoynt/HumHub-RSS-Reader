@@ -31,6 +31,7 @@ class RssController extends ContentContainerController
             $container->setSetting('article', $form->article, 'rss');
             $container->setSetting('pictures', $form->pictures, 'rss');
             $container->setSetting('maxwidth', $form->maxwidth, 'rss');
+            $container->setSetting('maxheight', $form->maxheight, 'rss');
             $container->setSetting('interval', $form->interval, 'rss');
             Yii::$app->queue->push(new GetFeedUpdates(['space' => $container, 'force' => true]));
             return $this->redirect($container->createUrl('/rss/rss/config'));
