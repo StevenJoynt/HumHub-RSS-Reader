@@ -25,10 +25,10 @@ class Events
             'group' => 'manage',
             'icon' => '<i class="fa fa-rss"></i>',
             'isActive' => (
-		Yii::$app->controller->module &&
-		Yii::$app->controller->module->id == 'rss' &&
-		Yii::$app->controller->id == 'admin'
-	    ),
+                Yii::$app->controller->module &&
+                Yii::$app->controller->module->id == 'rss' &&
+                Yii::$app->controller->id == 'admin'
+            ),
             'sortOrder' => 99999,
         ]);
     }
@@ -38,10 +38,10 @@ class Events
      *
      * @param \yii\base\Event $event
      */
-    public static function onHourlyCron($event)
+    public static function onCron($event)
     {
         try {
-            $event->sender->stdout("Updating RSS news feeds...\n");
+            Console::stdout("Updating RSS news feeds...\n");
             $ccmsEnabled = ContentContainerModuleState::find()->
                 where(['module_id' => 'rss'])->
                 andWhere(['module_state' => 1])->
@@ -49,10 +49,15 @@ class Events
             foreach ( $ccmsEnabled as $ccms ) {
                 $cc = ContentContainer::findOne($ccms->contentcontainer_id);
                 $space = Space::findOne($cc->pk);
-                $event->sender->stdout("  Queueing update for space \"" . $space->name . "\"\n");
+                $interval= $space->getSetting('interval', 'rss', 60);
+                $lastrun= $space->getSetting('lastrun', 'rss', '');
+                if (! empty($lastrun) && time() < ($interval * 60 + $lastrun))
+                    continue;
+                $space->setSetting('lastrun', time(), 'rss');
+                Console::stdout("  Queueing update for space \"" . $space->name . "\"\n");
                 Yii::$app->queue->push(new jobs\GetFeedUpdates(['space' => $space, 'force' => false]));
             }
-            $event->sender->stdout("done.\n", Console::FG_GREEN);
+            Console::stdout(Console::renderColoredString("%gdone.%n\n", 1));
         } catch (\Throwable $e) {
             $event->sender->stderr($e->getMessage()."\n");
             Yii::error($e);
