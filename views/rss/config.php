@@ -36,6 +36,11 @@ use yii\helpers\Html;
             <?php echo $form->error($model, 'maxheight'); ?>
         </div>
 
+        <div class="form-group">
+            <?php echo $form->field($model, 'interval'); ?>
+            <?php echo $form->error($model, 'interval'); ?>
+        </div>
+
         <?php echo Html::submitButton('Save', array('class' => 'btn btn-primary')); ?>
         <?php CActiveForm::end(); ?>
 

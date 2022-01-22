@@ -39,6 +39,12 @@ class ConfigureForm extends \yii\base\Model
      */
     public $maxheight;
 
+    /**
+     * Integer:
+     * update interval in minutes
+     */
+    public $interval;
+
     public function rules()
     {
         return [
@@ -65,6 +71,10 @@ class ConfigureForm extends \yii\base\Model
                 'integer',
                 'min' => 10,
                 'max' => 2500,
+            ],[
+                'interval',
+                'integer',
+                'min' => 1,
             ]
         ];
     }
@@ -77,6 +87,7 @@ class ConfigureForm extends \yii\base\Model
             'pictures' => 'Show pictures in the news articles?',
             'maxwidth' => 'Maximum width of pictures',
             'maxheight' => 'Maximum height of pictures',
+            'interval' => 'Update interval in minutes',
         ];
     }
 
