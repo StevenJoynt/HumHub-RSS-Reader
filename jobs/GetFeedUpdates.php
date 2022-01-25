@@ -25,12 +25,14 @@ class GetFeedUpdates extends ActiveJob
     private $logFileHandle;
 
     # configuration settings
-    private $cfg_url;       # the URL of the RSS feed
-    private $cfg_article;   # 'summary' or 'full'
-    private $cfg_pictures;  # 'yes' or 'no'
-    private $cfg_maxwidth;  # maximum width of pictures
+    private $cfg_url; # the URL of the RSS feed
+    private $cfg_article; # 'summary' or 'full'
+    private $cfg_pictures; # 'yes' or 'no'
+    private $cfg_maxwidth; # maximum width of pictures
     private $cfg_maxheight; # maximum height of pictures
-    private $cfg_owner;     # user id of the owner of the posts
+    private $cfg_owner; # user id of the owner of the posts
+    private $cfg_dayshistory; # maximum number of days history
+    private $cfg_daysfuture; # maximum number of days into the future
 
     private $created_by; # int: user id number
     private $rss_folder; # string: full name of the folder to store the RSS feed
@@ -43,6 +45,8 @@ class GetFeedUpdates extends ActiveJob
     private $feed_copyright; # string: copyright information for this RSS feed
     private $article; # string: markdown document representing HTML feed item body
     private $now; # DateTime: the current time
+    private $oldest; # oldest date we are accepting
+    private $newest; # newest date we are accepting
     private $items; # array of sij\humhub\modules\rss\components\RssElement keyed by pubDate
 
     private function log($message) {
@@ -176,11 +180,10 @@ class GetFeedUpdates extends ActiveJob
             $datePublished = false;
         }
 
-        // check if published date is known and in the future
+        // if the published date is known, skip the item if it is out of range
         if ( $datePublished ) {
-            if ( $datePublished > $this->now ) {
-                return; // don't publish it here if it's not time yet
-            }
+            if ( $datePublished < $this->oldest ) return;
+            if ( $datePublished > $this->newest ) return;
         }
 
         // choose which version of the article to use
@@ -450,6 +453,8 @@ class GetFeedUpdates extends ActiveJob
         $this->cfg_maxwidth = (int)$this->space->getSetting('maxwidth', 'rss', '500');
         $this->cfg_maxheight = (int)$this->space->getSetting('maxheight', 'rss', '500');
         $this->cfg_owner = $this->space->getSetting('owner', 'rss', '');
+        $this->cfg_dayshistory = (int)$this->space->getSetting('dayshistory', 'rss', '31');
+        $this->cfg_daysfuture = (int)$this->space->getSetting('daysfuture', 'rss', '1');
 
         MarkdownHelper::$cfg_pictures = $this->cfg_pictures;
         MarkdownHelper::$cfg_maxwidth = $this->cfg_maxwidth;
@@ -461,7 +466,9 @@ class GetFeedUpdates extends ActiveJob
         $this->rss_file = $this->rss_folder . '/' . $this->space->guid . '.xml';
         $this->new_file = $this->rss_folder . '/' . $this->space->guid . '.new';
 
-        $this->now = new \DateTime("now");
+        $this->now = new \DateTime('now');
+        $this->oldest = (new \DateTime('now'))->sub(new \DateInterval('P' . $this->cfg_dayshistory . 'D'));
+        $this->newest = (new \DateTime('now'))->add(new \DateInterval('P' . $this->cfg_daysfuture . 'D'));
 
         $this->log("\n\n### run at " . print_r($this->now, true));
 

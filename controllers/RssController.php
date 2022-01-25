@@ -27,6 +27,8 @@ class RssController extends ContentContainerController
         $form->maxheight = $container->getSetting('maxheight', 'rss', '500');
         $form->interval = $container->getSetting('interval', 'rss', '60');
         $form->owner = RssController::vetOwner($container->getSetting('owner', 'rss', ''), $container)->guid;
+        $form->dayshistory = $container->getSetting('dayshistory', 'rss', '31');
+        $form->daysfuture = $container->getSetting('daysfuture', 'rss', '1');
         if ( $form->load(Yii::$app->request->post()) && $form->validate() ) {
             $container->setSetting('url', $form->url, 'rss');
             $container->setSetting('article', $form->article, 'rss');
@@ -35,6 +37,8 @@ class RssController extends ContentContainerController
             $container->setSetting('maxheight', $form->maxheight, 'rss');
             $container->setSetting('interval', $form->interval, 'rss');
             $container->setSetting('owner', RssController::vetOwner($form->owner, $container)->id, 'rss');
+            $container->setSetting('dayshistory', $form->dayshistory, 'rss');
+            $container->setSetting('daysfuture', $form->daysfuture, 'rss');
             Yii::$app->queue->push(new GetFeedUpdates(['space' => $container, 'force' => true]));
             return $this->redirect($container->createUrl('/rss/rss/config'));
         }

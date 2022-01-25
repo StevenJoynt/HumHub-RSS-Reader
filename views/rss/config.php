@@ -18,6 +18,21 @@ use yii\helpers\Html;
         </div>
 
         <div class="form-group">
+            <?php echo $form->field($model, 'interval'); ?>
+            <?php echo $form->error($model, 'interval'); ?>
+        </div>
+
+        <div class="form-group">
+            <?php echo $form->field($model, 'daysfuture'); ?>
+            <?php echo $form->error($model, 'daysfuture'); ?>
+        </div>
+
+        <div class="form-group">
+            <?php echo $form->field($model, 'dayshistory'); ?>
+            <?php echo $form->error($model, 'dayshistory'); ?>
+        </div>
+
+        <div class="form-group">
             <?php echo $form->field($model, 'owner')->textInput(['id' => 'owner']); ?>
             <?php echo $form->error($model, 'owner'); ?>
             <?php echo UserPicker::widget(array(
@@ -47,11 +62,6 @@ use yii\helpers\Html;
         <div class="form-group">
             <?php echo $form->field($model, 'maxheight'); ?>
             <?php echo $form->error($model, 'maxheight'); ?>
-        </div>
-
-        <div class="form-group">
-            <?php echo $form->field($model, 'interval'); ?>
-            <?php echo $form->error($model, 'interval'); ?>
         </div>
 
         <?php echo Html::submitButton('Save', array('class' => 'btn btn-primary')); ?>

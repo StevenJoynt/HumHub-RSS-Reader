@@ -51,6 +51,22 @@ class ConfigureForm extends \yii\base\Model
      */
     public $owner;
 
+    /**
+     * Integer:
+     * maximum age (in days) of news items to be extract from the RSS feed.
+     * this is useful if the feed contains a large amount of history,
+     * but we are only interested in recent information.
+     */
+    public $dayshistory;
+
+    /**
+     * Integer:
+     * maximum number of days into the future we accept items from the RSS feed.
+     * some RSS feeds contain advance postings for the comming days or months,
+     * but we may only be interesting in current and past events.
+     */
+    public $daysfuture;
+
     public function rules()
     {
         return [
@@ -84,6 +100,10 @@ class ConfigureForm extends \yii\base\Model
                 'interval',
                 'integer',
                 'min' => 1,
+            ],[
+                ['daysfuture', 'dayshistory'],
+                'integer',
+                'min' => 0,
             ]
         ];
     }
@@ -97,7 +117,9 @@ class ConfigureForm extends \yii\base\Model
             'maxwidth' => 'Maximum width of pictures',
             'maxheight' => 'Maximum height of pictures',
             'interval' => 'Update interval in minutes',
-            'owner' => 'The user who owns the posts'
+            'owner' => 'The user who owns the posts',
+            'daysfuture' => 'Ignore news dated beyond this number days into the future',
+            'dayshistory' => 'Ignore news older than this number of days in the past',
         ];
     }
 
