@@ -10,6 +10,7 @@ use humhub\modules\content\models\Content;
 
 use sij\humhub\modules\rss\components\MarkdownHelper;
 use sij\humhub\modules\rss\components\RssElement;
+use sij\humhub\modules\rss\controllers\RssController;
 
 /**
  * Reads the RSS Feed URL for this space
@@ -29,6 +30,7 @@ class GetFeedUpdates extends ActiveJob
     private $cfg_pictures;  # 'yes' or 'no'
     private $cfg_maxwidth;  # maximum width of pictures
     private $cfg_maxheight; # maximum height of pictures
+    private $cfg_owner;     # user id of the owner of the posts
 
     private $created_by; # int: user id number
     private $rss_folder; # string: full name of the folder to store the RSS feed
@@ -90,7 +92,7 @@ class GetFeedUpdates extends ActiveJob
             $stamp = $datePublished->format("Y-m-d H:i:s");
             $oldContent = Content::findAll([
                 'contentcontainer_id' => $this->space->contentcontainer_id,
-                'created_by' => $this->created_by,
+//              'created_by' => $this->created_by, // cant rely on this field if config changed
                 'created_at' => $stamp,
             ]);
             if ( count($oldContent) == 1 ) {
@@ -447,12 +449,13 @@ class GetFeedUpdates extends ActiveJob
         $this->cfg_pictures = $this->space->getSetting('pictures', 'rss', 'yes');
         $this->cfg_maxwidth = (int)$this->space->getSetting('maxwidth', 'rss', '500');
         $this->cfg_maxheight = (int)$this->space->getSetting('maxheight', 'rss', '500');
+        $this->cfg_owner = $this->space->getSetting('owner', 'rss', '');
 
         MarkdownHelper::$cfg_pictures = $this->cfg_pictures;
         MarkdownHelper::$cfg_maxwidth = $this->cfg_maxwidth;
         MarkdownHelper::$cfg_maxheight = $this->cfg_maxheight;
 
-        $this->created_by = $this->space->created_by;
+        $this->created_by = RssController::vetOwner($this->cfg_owner, $this->space)->id;
 
         $this->rss_folder = Yii::getAlias('@runtime/rss');
         $this->rss_file = $this->rss_folder . '/' . $this->space->guid . '.xml';

@@ -45,10 +45,19 @@ class ConfigureForm extends \yii\base\Model
      */
     public $interval;
 
+    /**
+     * String:
+     * guid of User who owns the posts
+     */
+    public $owner;
+
     public function rules()
     {
         return [
             [
+                ['url', 'owner'],
+                'safe'
+            ],[
                 'url',
                 'trim'
             ],[
@@ -88,6 +97,7 @@ class ConfigureForm extends \yii\base\Model
             'maxwidth' => 'Maximum width of pictures',
             'maxheight' => 'Maximum height of pictures',
             'interval' => 'Update interval in minutes',
+            'owner' => 'The user who owns the posts'
         ];
     }
 

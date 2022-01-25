@@ -1,5 +1,6 @@
 <?php
 use humhub\compat\CActiveForm;
+use humhub\modules\user\widgets\UserPicker;
 use yii\helpers\Html;
 ?>
 <div class="panel panel-default">
@@ -14,6 +15,18 @@ use yii\helpers\Html;
         <div class="form-group">
             <?php echo $form->field($model, 'url'); ?>
             <?php echo $form->error($model, 'url'); ?>
+        </div>
+
+        <div class="form-group">
+            <?php echo $form->field($model, 'owner')->textInput(['id' => 'owner']); ?>
+            <?php echo $form->error($model, 'owner'); ?>
+            <?php echo UserPicker::widget(array(
+                'placeholderText' => 'Select a user',
+                'maxUsers' => 1,
+                'attribute' => 'owner',
+                'model' => $model,
+                'inputId' => 'owner'
+            )); ?>
         </div>
 
         <div class="form-group">
