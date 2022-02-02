@@ -3,6 +3,7 @@
 namespace sij\humhub\modules\rss\jobs;
 
 use Yii;
+use yii\helpers\Console;
 
 use humhub\modules\queue\ActiveJob;
 use humhub\modules\post\models\Post;
@@ -107,6 +108,7 @@ class GetFeedUpdates extends ActiveJob
             if ( count($oldContent) == 1 ) {
                 $post = Post::findOne($oldContent[0]->object_id);
                 $this->log("\n\n### update Post\n");
+                Console::stdout("RSS queue: updating post... ");
             }
         }
 
@@ -114,6 +116,7 @@ class GetFeedUpdates extends ActiveJob
         if ( $post === null ) {
             $post = new Post($this->space);
             $this->log("\n\n### new Post\n");
+            Console::stdout("RSS queue: creating new post... ");
         }
 
         $post->created_by =
@@ -149,6 +152,7 @@ class GetFeedUpdates extends ActiveJob
                 ->query();
         }
 
+        Console::stdout(Console::renderColoredString("%gdone.%n\n", 1));
     }
 
     /**
