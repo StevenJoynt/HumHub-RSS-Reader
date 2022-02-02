@@ -11,6 +11,10 @@ use humhub\modules\space\models\Space;
 
 class Events
 {
+    /**
+     * @var string mutex to acquire
+     */
+    const MUTEX_ID = 'rss-cron';
 
     /**
      * Defines what to do if admin menu is initialized.
@@ -40,6 +44,11 @@ class Events
      */
     public static function onCron($event)
     {
+        if (! Yii::$app->mutex->acquire(static::MUTEX_ID)) {
+            Console::stdout("RSS cron execution skipped - already running!\n");
+            return;
+        }
+
         try {
             Console::stdout("Updating RSS news feeds...\n");
             $ccmsEnabled = ContentContainerModuleState::find()->
@@ -62,6 +71,8 @@ class Events
             $event->sender->stderr($e->getMessage()."\n");
             Yii::error($e);
         }
+
+        Yii::$app->mutex->release(static::MUTEX_ID);
     }
 
 }

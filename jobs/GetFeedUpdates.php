@@ -49,6 +49,11 @@ class GetFeedUpdates extends ActiveJob
     private $newest; # newest date we are accepting
     private $items; # array of sij\humhub\modules\rss\components\RssElement keyed by pubDate
 
+    /**
+     * @var string mutex to acquire
+     */
+    const MUTEX_ID = 'rss-queue';
+
     private function log($message) {
         if ( $this->logFileHandle ) {
             fwrite($this->logFileHandle, $message);
@@ -444,6 +449,10 @@ class GetFeedUpdates extends ActiveJob
  */
     public function run()
     {
+        if (! Yii::$app->mutex->acquire(static::MUTEX_ID)) {
+            Console::stdout("RSS queue execution skipped - already running!\n");
+            return;
+        }
 
 ####### $this->logFileHandle = fopen(dirname(__FILE__) . '/log.txt', 'w');
 
@@ -478,5 +487,6 @@ class GetFeedUpdates extends ActiveJob
             fclose($this->logFileHandle);
         }
 
+        Yii::$app->mutex->release(static::MUTEX_ID);
     }
 }
