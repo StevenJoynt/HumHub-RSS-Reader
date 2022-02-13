@@ -3,6 +3,7 @@
 namespace sij\humhub\modules\rss\jobs;
 
 use Yii;
+#use yii\BaseYii;
 use yii\helpers\Console;
 
 use humhub\modules\queue\ActiveJob;
@@ -69,6 +70,9 @@ class GetFeedUpdates extends ActiveJob
     private function postError($title, $info)
     {
 
+        Yii::warning("RSS Error: ".$title."\n".$info."\n", "RSS-Reader");
+        return;
+
         $post = new Post($this->space);
 
         $post->created_by =
@@ -97,6 +101,10 @@ class GetFeedUpdates extends ActiveJob
     {
         $post = null;
 
+        if ( $datePublished ) {
+            $stamp = $datePublished->format("Y-m-d H:i:s");
+        }
+
         // find previous version of the post via db
         if ( $link ) {
             $url2id = RssPosts::findOne(['rss_link' => $link]);
@@ -106,8 +114,7 @@ class GetFeedUpdates extends ActiveJob
 
         // attempt to locate a previous version of the post
         // guess this should go some day - themroc
-        if ( $post === null && $datePublished ) {
-            $stamp = $datePublished->format("Y-m-d H:i:s");
+        if ( $post === null && $stamp ) {
             $oldContent = Content::findAll([
                 'contentcontainer_id' => $this->space->contentcontainer_id,
 //              'created_by' => $this->created_by, // cant rely on this field if config changed
@@ -122,19 +129,16 @@ class GetFeedUpdates extends ActiveJob
         if ( $post === null ) {
             $post = new Post($this->space);
             $this->log("\n\n### new Post\n");
-            Console::stdout("RSS queue: creating new post... ");
+            Console::stdout("RSS queue: creating new post ".$link);
         } else {
-            if ( $datePublished ) {
-                if ($stamp > $post->created_at) {
-                    $this->log("\n\n### update Post\n");
-                    Console::stdout("RSS queue: updating post... ");
-                } else {
-                    return; // not changed
-                }
+            if ( ! $stamp ) {
+                return; // we assume it hasn't changed - better miss an update than rewrite the post every time.
+            }
+            if ($stamp > $post->created_at) {
+                $this->log("\n\n### update Post\n");
+                Console::stdout("RSS queue: updating post ".$link);
             } else {
-                if ( $post !== null ) {
-                    return; // we assume it hasn't changed - better miss an update than rewrite the post every time.
-                }
+                return; // not changed
             }
         }
 
@@ -178,7 +182,7 @@ class GetFeedUpdates extends ActiveJob
                 ->query();
         }
 
-        Console::stdout(Console::renderColoredString("%gdone.%n\n", 1));
+        Console::stdout(Console::renderColoredString(" %gdone.%n\n", 1));
     }
 
     /**

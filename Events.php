@@ -44,13 +44,16 @@ class Events
      */
     public static function onCron($event)
     {
+        if ($event->sender->requestedRoute != "cron/run")
+            return;
+
         if (! Yii::$app->mutex->acquire(static::MUTEX_ID)) {
             Console::stdout("RSS cron execution skipped - already running!\n");
             return;
         }
 
         try {
-            Console::stdout("Updating RSS news feeds...\n");
+            Console::stdout("Queueing RSS feeds for spaces:");
             $ccmsEnabled = ContentContainerModuleState::find()->
                 where(['module_id' => 'rss'])->
                 andWhere(['module_state' => 1])->
@@ -63,10 +66,11 @@ class Events
                 if (! empty($lastrun) && time() < ($interval * 60 + $lastrun))
                     continue;
                 $space->setSetting('lastrun', time(), 'rss');
-                Console::stdout("  Queueing update for space \"" . $space->name . "\"\n");
+#                Console::stdout("  Queueing update for space \"" . $space->name . "\"\n");
+                Console::stdout(' "' . $space->name . '"');
                 Yii::$app->queue->push(new jobs\GetFeedUpdates(['space' => $space, 'force' => false]));
             }
-            Console::stdout(Console::renderColoredString("%gdone.%n\n", 1));
+            Console::stdout(Console::renderColoredString(" %gdone.%n\n", 1));
         } catch (\Throwable $e) {
             $event->sender->stderr($e->getMessage()."\n");
             Yii::error($e);
