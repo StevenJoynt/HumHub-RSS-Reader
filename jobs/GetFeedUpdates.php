@@ -70,7 +70,7 @@ class GetFeedUpdates extends ActiveJob
     private function postError($title, $info)
     {
 
-        Yii::warning("RSS Error: ".$title."\n".$info."\n", "RSS-Reader");
+        Yii::error("RSS-Reader: ".$title."\n".$info."\n", "RSS-Reader");
         return;
 
         $post = new Post($this->space);
