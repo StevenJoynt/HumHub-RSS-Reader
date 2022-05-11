@@ -1,71 +1,62 @@
 <?php
-use humhub\compat\CActiveForm;
+
+use yii\bootstrap\ActiveForm;
 use humhub\modules\user\widgets\UserPicker;
 use yii\helpers\Html;
 ?>
 <div class="panel panel-default">
     <div class="panel-heading">
-        RSS Module Configuration
+        <?= Yii::t('RssModule.base', 'RSS Module Configuration') ?>
     </div>
     <div class="panel-body">
 
-        <?php $form = CActiveForm::begin(); ?>
-        <?php echo $form->errorSummary($model); ?>
+        <?php $form = ActiveForm::begin(); ?>
 
         <div class="form-group">
-            <?php echo $form->field($model, 'url'); ?>
-            <?php echo $form->error($model, 'url'); ?>
+            <?= $form->field($model, 'url'); ?>
         </div>
 
         <div class="form-group">
-            <?php echo $form->field($model, 'interval'); ?>
-            <?php echo $form->error($model, 'interval'); ?>
+            <?= $form->field($model, 'interval'); ?>
         </div>
 
         <div class="form-group">
-            <?php echo $form->field($model, 'daysfuture'); ?>
-            <?php echo $form->error($model, 'daysfuture'); ?>
+            <?= $form->field($model, 'daysfuture'); ?>
         </div>
 
         <div class="form-group">
-            <?php echo $form->field($model, 'dayshistory'); ?>
-            <?php echo $form->error($model, 'dayshistory'); ?>
+            <?= $form->field($model, 'dayshistory'); ?>
         </div>
 
         <div class="form-group">
-            <?php echo $form->field($model, 'owner')->textInput(['id' => 'owner']); ?>
-            <?php echo $form->error($model, 'owner'); ?>
-            <?php echo UserPicker::widget(array(
+            <?= $form->field($model, 'owner')->textInput(['id' => 'owner']); ?>
+            <?= UserPicker::widget([
                 'placeholderText' => 'Select a user',
                 'maxUsers' => 1,
                 'attribute' => 'owner',
                 'model' => $model,
                 'inputId' => 'owner'
-            )); ?>
+            ]); ?>
         </div>
 
         <div class="form-group">
-            <?php echo $form->field($model, 'article')->radioList(['full' => 'Full Article', 'summary' => 'Summary Only']); ?>
-            <?php echo $form->error($model, 'article'); ?>
+            <?= $form->field($model, 'article')->inline()->radioList(['full' => 'Full Article', 'summary' => 'Summary Only']); ?>
         </div>
 
         <div class="form-group">
-            <?php echo $form->field($model, 'pictures')->radioList(['yes' => 'Yes', 'no' => 'No']); ?>
-            <?php echo $form->error($model, 'pictures'); ?>
+            <?= $form->field($model, 'pictures')->inline()->radioList(['yes' => 'Yes', 'no' => 'No']); ?>
         </div>
 
         <div class="form-group">
-            <?php echo $form->field($model, 'maxwidth'); ?>
-            <?php echo $form->error($model, 'maxwidth'); ?>
+            <?= $form->field($model, 'maxwidth'); ?>
         </div>
 
         <div class="form-group">
-            <?php echo $form->field($model, 'maxheight'); ?>
-            <?php echo $form->error($model, 'maxheight'); ?>
+            <?= $form->field($model, 'maxheight'); ?>
         </div>
 
-        <?php echo Html::submitButton('Save', array('class' => 'btn btn-primary')); ?>
-        <?php CActiveForm::end(); ?>
+        <?= Html::submitButton('Save', ['class' => 'btn btn-primary']); ?>
+        <?php ActiveForm::end(); ?>
 
     </div>
 </div>
