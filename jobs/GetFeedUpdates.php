@@ -3,6 +3,8 @@
 namespace sij\humhub\modules\rss\jobs;
 
 use Yii;
+#use yii\BaseYii;
+use yii\helpers\Console;
 
 use humhub\modules\queue\ActiveJob;
 use humhub\modules\post\models\Post;
@@ -11,6 +13,7 @@ use humhub\modules\content\models\Content;
 use sij\humhub\modules\rss\components\MarkdownHelper;
 use sij\humhub\modules\rss\components\RssElement;
 use sij\humhub\modules\rss\controllers\RssController;
+use sij\humhub\modules\rss\models\RssPosts;
 
 /**
  * Reads the RSS Feed URL for this space
@@ -49,6 +52,11 @@ class GetFeedUpdates extends ActiveJob
     private $newest; # newest date we are accepting
     private $items; # array of sij\humhub\modules\rss\components\RssElement keyed by pubDate
 
+    /**
+     * @var string mutex to acquire
+     */
+    const MUTEX_ID = 'rss-queue';
+
     private function log($message) {
         if ( $this->logFileHandle ) {
             fwrite($this->logFileHandle, $message);
@@ -56,11 +64,14 @@ class GetFeedUpdates extends ActiveJob
         }
     }
 
-/**
- * Creates a new Post in the Space
- */
+    /**
+     * Creates a new Post in the Space
+     */
     private function postError($title, $info)
     {
+
+        Yii::error("RSS-Reader: ".$title."\n".$info."\n", "RSS-Reader");
+        return;
 
         $post = new Post($this->space);
 
@@ -83,17 +94,27 @@ class GetFeedUpdates extends ActiveJob
 
     }
 
-/**
- * Creates a new Post in the Space
- */
-    private function postMessage($message, $datePublished = false)
+    /**
+     * Creates a new Post in the Space
+     */
+    private function postMessage($message, $link = false, $datePublished = false)
     {
-
         $post = null;
 
-        // attempt to locate a previous version of the post
         if ( $datePublished ) {
             $stamp = $datePublished->format("Y-m-d H:i:s");
+        }
+
+        // find previous version of the post via db
+        if ( $link ) {
+            $url2id = RssPosts::findOne(['rss_link' => $link]);
+            if ( $url2id !== null )
+                $post = Post::findOne($url2id->post_id);
+        }
+
+        // attempt to locate a previous version of the post
+        // guess this should go some day - themroc
+        if ( $post === null && $stamp ) {
             $oldContent = Content::findAll([
                 'contentcontainer_id' => $this->space->contentcontainer_id,
 //              'created_by' => $this->created_by, // cant rely on this field if config changed
@@ -101,7 +122,6 @@ class GetFeedUpdates extends ActiveJob
             ]);
             if ( count($oldContent) == 1 ) {
                 $post = Post::findOne($oldContent[0]->object_id);
-                $this->log("\n\n### update Post\n");
             }
         }
 
@@ -109,6 +129,17 @@ class GetFeedUpdates extends ActiveJob
         if ( $post === null ) {
             $post = new Post($this->space);
             $this->log("\n\n### new Post\n");
+            Console::stdout("RSS queue: creating new post ".$link);
+        } else {
+            if ( ! $stamp ) {
+                return; // we assume it hasn't changed - better miss an update than rewrite the post every time.
+            }
+            if ($stamp > $post->created_at) {
+                $this->log("\n\n### update Post\n");
+                Console::stdout("RSS queue: updating post ".$link);
+            } else {
+                return; // not changed
+            }
         }
 
         $post->created_by =
@@ -125,6 +156,13 @@ class GetFeedUpdates extends ActiveJob
 
         $post->save();
         $this->log(print_r($post, true));
+
+        if (! $url2id ) {
+            $url2id = new RssPosts();
+            $url2id->rss_link = $link;
+            $url2id->post_id = $post->id;
+            $url2id->save();
+        }
 
         // make it look like the space post was created at the same time as the RSS article
         // note $post->save() always sets the time stamps to "now"
@@ -144,6 +182,7 @@ class GetFeedUpdates extends ActiveJob
                 ->query();
         }
 
+        Console::stdout(Console::renderColoredString(" %gdone.%n\n", 1));
     }
 
     /**
@@ -250,7 +289,7 @@ class GetFeedUpdates extends ActiveJob
         }
 
         // post the message in the stream
-        $this->postMessage($message, $datePublished);
+        $this->postMessage($message, $link, $datePublished);
 
     }
 
@@ -444,6 +483,10 @@ class GetFeedUpdates extends ActiveJob
  */
     public function run()
     {
+        if (! Yii::$app->mutex->acquire(static::MUTEX_ID)) {
+            Console::stdout("RSS queue execution skipped - already running!\n");
+            return;
+        }
 
 ####### $this->logFileHandle = fopen(dirname(__FILE__) . '/log.txt', 'w');
 
@@ -478,5 +521,6 @@ class GetFeedUpdates extends ActiveJob
             fclose($this->logFileHandle);
         }
 
+        Yii::$app->mutex->release(static::MUTEX_ID);
     }
 }
