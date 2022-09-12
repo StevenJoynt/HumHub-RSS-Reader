@@ -3,6 +3,7 @@
 namespace sij\humhub\modules\rss\jobs;
 
 use Yii;
+use yii\helpers\Console;
 
 use humhub\modules\queue\ActiveJob;
 use humhub\modules\post\models\Post;
@@ -48,6 +49,11 @@ class GetFeedUpdates extends ActiveJob
     private $oldest; # oldest date we are accepting
     private $newest; # newest date we are accepting
     private $items; # array of sij\humhub\modules\rss\components\RssElement keyed by pubDate
+
+    /**
+     * @var string mutex to acquire
+     */
+    const MUTEX_ID = 'rss-queue';
 
     private function log($message) {
         if ( $this->logFileHandle ) {
@@ -102,6 +108,7 @@ class GetFeedUpdates extends ActiveJob
             if ( count($oldContent) == 1 ) {
                 $post = Post::findOne($oldContent[0]->object_id);
                 $this->log("\n\n### update Post\n");
+                Console::stdout("RSS queue: updating post... ");
             }
         }
 
@@ -109,6 +116,7 @@ class GetFeedUpdates extends ActiveJob
         if ( $post === null ) {
             $post = new Post($this->space);
             $this->log("\n\n### new Post\n");
+            Console::stdout("RSS queue: creating new post... ");
         }
 
         $post->created_by =
@@ -144,6 +152,7 @@ class GetFeedUpdates extends ActiveJob
                 ->query();
         }
 
+        Console::stdout(Console::renderColoredString("%gdone.%n\n", 1));
     }
 
     /**
@@ -444,6 +453,10 @@ class GetFeedUpdates extends ActiveJob
  */
     public function run()
     {
+        if (! Yii::$app->mutex->acquire(static::MUTEX_ID)) {
+            Console::stdout("RSS queue execution skipped - already running!\n");
+            return;
+        }
 
 ####### $this->logFileHandle = fopen(dirname(__FILE__) . '/log.txt', 'w');
 
@@ -478,5 +491,6 @@ class GetFeedUpdates extends ActiveJob
             fclose($this->logFileHandle);
         }
 
+        Yii::$app->mutex->release(static::MUTEX_ID);
     }
 }
