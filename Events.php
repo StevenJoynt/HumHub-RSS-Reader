@@ -49,8 +49,8 @@ class Events
             foreach ( $ccmsEnabled as $ccms ) {
                 $cc = ContentContainer::findOne($ccms->contentcontainer_id);
                 $space = Space::findOne($cc->pk);
-                $interval= $space->getSetting('interval', 'rss', 60);
-                $lastrun= $space->getSetting('lastrun', 'rss', '');
+                $interval= $space->getSettings('interval', 'rss', 60);
+                $lastrun= $space->getSettings('lastrun', 'rss', '');
                 if (! empty($lastrun) && time() < ($interval * 60 + $lastrun))
                     continue;
                 $space->setSetting('lastrun', time(), 'rss');
