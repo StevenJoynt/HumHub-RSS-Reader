@@ -20,15 +20,15 @@ class RssController extends ContentContainerController
     {
         $container = $this->contentContainer;
         $form = new ConfigureForm();
-        $form->url = $container->getSetting('url', 'rss');
-        $form->article = $container->getSetting('article', 'rss', 'summary');
-        $form->pictures = $container->getSetting('pictures', 'rss', 'yes');
-        $form->maxwidth = $container->getSetting('maxwidth', 'rss', '500');
-        $form->maxheight = $container->getSetting('maxheight', 'rss', '500');
-        $form->interval = $container->getSetting('interval', 'rss', '60');
+        $form->url = $container->getSettings('url', 'rss');
+        $form->article = $container->getSettings('article', 'rss', 'summary');
+        $form->pictures = $container->getSettings('pictures', 'rss', 'yes');
+        $form->maxwidth = $container->getSettings('maxwidth', 'rss', '500');
+        $form->maxheight = $container->getSettings('maxheight', 'rss', '500');
+        $form->interval = $container->getSettings('interval', 'rss', '60');
         $form->owner = RssController::vetOwner($container->getSetting('owner', 'rss', ''), $container)->guid;
-        $form->dayshistory = $container->getSetting('dayshistory', 'rss', '31');
-        $form->daysfuture = $container->getSetting('daysfuture', 'rss', '1');
+        $form->dayshistory = $container->getSettings('dayshistory', 'rss', '31');
+        $form->daysfuture = $container->getSettings('daysfuture', 'rss', '1');
         if ( $form->load(Yii::$app->request->post()) && $form->validate() ) {
             $container->setSetting('url', $form->url, 'rss');
             $container->setSetting('article', $form->article, 'rss');
