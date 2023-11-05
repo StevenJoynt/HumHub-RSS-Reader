@@ -59,7 +59,7 @@ class Events
             }
             Console::stdout(Console::renderColoredString("%gdone.%n\n", 1));
         } catch (\Throwable $e) {
-            $event->sender->stderr($e->getMessage()."\n");
+            $e->getMessage()."\n";
             Yii::error($e);
         }
     }
