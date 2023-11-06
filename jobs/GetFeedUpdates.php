@@ -447,14 +447,14 @@ class GetFeedUpdates extends ActiveJob
 
 ####### $this->logFileHandle = fopen(dirname(__FILE__) . '/log.txt', 'w');
 
-        $this->cfg_url = $this->space->getSetting('url', 'rss');
-        $this->cfg_article = $this->space->getSetting('article', 'rss', 'summary');
-        $this->cfg_pictures = $this->space->getSetting('pictures', 'rss', 'yes');
-        $this->cfg_maxwidth = (int)$this->space->getSetting('maxwidth', 'rss', '500');
-        $this->cfg_maxheight = (int)$this->space->getSetting('maxheight', 'rss', '500');
-        $this->cfg_owner = $this->space->getSetting('owner', 'rss', '');
-        $this->cfg_dayshistory = (int)$this->space->getSetting('dayshistory', 'rss', '31');
-        $this->cfg_daysfuture = (int)$this->space->getSetting('daysfuture', 'rss', '1');
+        $this->cfg_url = $this->space->settings->get('url', 'rss');
+        $this->cfg_article = $this->space->settings->get('article', 'rss', 'summary');
+        $this->cfg_pictures = $this->space->settings->get('pictures', 'rss', 'yes');
+        $this->cfg_maxwidth = (int)$this->space->settings->get('maxwidth', 'rss', '500');
+        $this->cfg_maxheight = (int)$this->space->settings->get('maxheight', 'rss', '500');
+        $this->cfg_owner = $this->space->settings->get('owner', 'rss', '');
+        $this->cfg_dayshistory = (int)$this->space->settings->get('dayshistory', 'rss', '31');
+        $this->cfg_daysfuture = (int)$this->space->settings->get('daysfuture', 'rss', '1');
 
         MarkdownHelper::$cfg_pictures = $this->cfg_pictures;
         MarkdownHelper::$cfg_maxwidth = $this->cfg_maxwidth;
