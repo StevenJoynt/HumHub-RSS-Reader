@@ -19,30 +19,14 @@ class RssController extends ContentContainerController
     public function actionConfig()
     {
         $container = $this->contentContainer;
-        $form = new ConfigureForm();
-        $form->url = $container->getSetting('url', 'rss');
-        $form->article = $container->getSetting('article', 'rss', 'summary');
-        $form->pictures = $container->getSetting('pictures', 'rss', 'yes');
-        $form->maxwidth = $container->getSetting('maxwidth', 'rss', '500');
-        $form->maxheight = $container->getSetting('maxheight', 'rss', '500');
-        $form->interval = $container->getSetting('interval', 'rss', '60');
-        $form->owner = RssController::vetOwner($container->getSetting('owner', 'rss', ''), $container)->guid;
-        $form->dayshistory = $container->getSetting('dayshistory', 'rss', '31');
-        $form->daysfuture = $container->getSetting('daysfuture', 'rss', '1');
-        if ( $form->load(Yii::$app->request->post()) && $form->validate() ) {
-            $container->setSetting('url', $form->url, 'rss');
-            $container->setSetting('article', $form->article, 'rss');
-            $container->setSetting('pictures', $form->pictures, 'rss');
-            $container->setSetting('maxwidth', $form->maxwidth, 'rss');
-            $container->setSetting('maxheight', $form->maxheight, 'rss');
-            $container->setSetting('interval', $form->interval, 'rss');
-            $container->setSetting('owner', RssController::vetOwner($form->owner, $container)->id, 'rss');
-            $container->setSetting('dayshistory', $form->dayshistory, 'rss');
-            $container->setSetting('daysfuture', $form->daysfuture, 'rss');
-            Yii::$app->queue->push(new GetFeedUpdates(['space' => $container, 'force' => true]));
-            return $this->redirect($container->createUrl('/rss/rss/config'));
+        $model = new ConfigureForm();
+        $model->loadSettings();
+
+        if ($model->load(Yii::$app->request->post()) && $model->saveSettings()) {
+            $this->view->saved();
         }
-        return $this->render('config', array('model' => $form));
+
+        return $this->render('config', ['model' => $model]);
     }
 
     public static function vetOwner($owner, $space) {
@@ -64,5 +48,4 @@ class RssController extends ContentContainerController
         }
         return $user;
     }
-
 }

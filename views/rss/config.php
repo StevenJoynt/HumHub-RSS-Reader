@@ -1,8 +1,9 @@
 <?php
 
-use yii\bootstrap\ActiveForm;
-use humhub\modules\user\widgets\UserPicker;
-use yii\helpers\Html;
+use humhub\modules\ui\form\widgets\ActiveForm;
+use humhub\modules\user\widgets\UserPickerField;
+use humhub\libs\Html;
+
 ?>
 <div class="panel panel-default">
     <div class="panel-heading">
@@ -29,14 +30,7 @@ use yii\helpers\Html;
         </div>
 
         <div class="form-group">
-            <?= $form->field($model, 'owner')->textInput(['id' => 'owner']); ?>
-            <?= UserPicker::widget([
-                'placeholderText' => 'Select a user',
-                'maxUsers' => 1,
-                'attribute' => 'owner',
-                'model' => $model,
-                'inputId' => 'owner'
-            ]); ?>
+            <?= $form->field($model, 'owner')->widget(UserPickerField::class, ['id' => 'user_id', 'maxSelection' => '1']); ?>
         </div>
 
         <div class="form-group">

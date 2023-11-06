@@ -49,17 +49,17 @@ class Events
             foreach ( $ccmsEnabled as $ccms ) {
                 $cc = ContentContainer::findOne($ccms->contentcontainer_id);
                 $space = Space::findOne($cc->pk);
-                $interval= $space->getSetting('interval', 'rss', 60);
-                $lastrun= $space->getSetting('lastrun', 'rss', '');
-                if (! empty($lastrun) && time() < ($interval * 60 + $lastrun))
+                $interval = $space->settings->get('interval', 'rss', 60);
+                $lastrun = $space->settings->get('lastrun', 'rss', '');
+                if (!empty($lastrun) && time() < ($interval + 60 + $lastrun))
                     continue;
-                $space->setSetting('lastrun', time(), 'rss');
+                $space->settings->set('lastrun', time(), 'rss');
                 Console::stdout("  Queueing update for space \"" . $space->name . "\"\n");
                 Yii::$app->queue->push(new jobs\GetFeedUpdates(['space' => $space, 'force' => false]));
             }
             Console::stdout(Console::renderColoredString("%gdone.%n\n", 1));
         } catch (\Throwable $e) {
-            $event->sender->stderr($e->getMessage()."\n");
+            $e->getMessage()."\n";
             Yii::error($e);
         }
     }
